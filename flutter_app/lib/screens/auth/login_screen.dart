@@ -27,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       try {
         await _authService.signInWithEmailAndPassword(_email, _password);
-        // Navigeer naar home screen na succesvolle login
         Navigator.pushReplacementNamed(context, '/home');
       } catch (e) {
         setState(() {
@@ -40,13 +39,104 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _showForgotPasswordDialog() {
+    final TextEditingController emailController = TextEditingController();
+    String? dialogError;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Wachtwoord vergeten'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Voer je e-mailadres in om een wachtwoordreset-link te ontvangen.'),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      labelText: 'E-mail',
+                      hintText: 'naam@voorbeeld.com',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Voer een e-mail in';
+                      }
+                      if (!value.contains('@') || !value.contains('.')) {
+                        return 'Voer een geldig e-mailadres in';
+                      }
+                      return null;
+                    },
+                  ),
+                  if (dialogError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        dialogError!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Annuleren'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    if (emailController.text.isEmpty ||
+                        !emailController.text.contains('@') ||
+                        !emailController.text.contains('.')) {
+                      setState(() {
+                        dialogError = 'Voer een geldig e-mailadres in';
+                      });
+                      return;
+                    }
+
+                    try {
+                      await _authService.sendPasswordResetEmail(emailController.text);
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Wachtwoordreset-link verzonden. Controleer je e-mail.'),
+                        ),
+                      );
+                    } catch (e) {
+                      setState(() {
+                        dialogError = e.toString().contains('user-not-found')
+                            ? 'Geen account gevonden met dit e-mailadres'
+                            : 'Fout: ${e.toString()}';
+                      });
+                    }
+                  },
+                  child: const Text('Verzenden'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header met app naam en slogan
             Container(
               width: double.infinity,
               padding: const EdgeInsets.only(top: 80.0, bottom: 40.0),
@@ -85,7 +175,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
             ),
-            
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Form(
@@ -159,14 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {
-                          // Implementeer wachtwoord vergeten functionaliteit
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Wachtwoord vergeten functie komt binnenkort!'),
-                            ),
-                          );
-                        },
+                        onPressed: _showForgotPasswordDialog,
                         child: const Text('Wachtwoord vergeten?'),
                       ),
                     ),

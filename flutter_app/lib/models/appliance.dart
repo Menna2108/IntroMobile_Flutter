@@ -9,6 +9,9 @@ class Appliance {
   final String? imageUrl;
   final DateTime createdAt;
   final bool isAvailable;
+  final double? latitude;
+  final double? longitude;
+  final String? address;
 
   Appliance({
     this.id,
@@ -21,6 +24,9 @@ class Appliance {
     this.imageUrl,
     required this.createdAt,
     this.isAvailable = true,
+    this.latitude,
+    this.longitude,
+    this.address,
   });
 
   Map<String, dynamic> toMap() {
@@ -34,6 +40,9 @@ class Appliance {
       'imageUrl': imageUrl,
       'createdAt': createdAt,
       'isAvailable': isAvailable,
+      'latitude': latitude,
+      'longitude': longitude,
+      'address': address,
     };
   }
 
@@ -49,6 +58,9 @@ class Appliance {
       imageUrl: map['imageUrl'],
       createdAt: map['createdAt']?.toDate() ?? DateTime.now(),
       isAvailable: map['isAvailable'] ?? true,
+      latitude: map['latitude'],
+      longitude: map['longitude'],
+      address: map['address'],
     );
   }
 }

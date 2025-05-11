@@ -15,13 +15,10 @@ class AuthService {
   Future<UserCredential> registerWithEmailAndPassword(
       String email, String password, String name) async {
     try {
-      // Eerst de gebruiker aanmaken in Firebase Authentication
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
-      // Probeer gebruikersdocument aan te maken in Firestore
       try {
         await _firestore.collection('users').doc(result.user!.uid).set({
           'email': email,
@@ -29,16 +26,10 @@ class AuthService {
           'createdAt': FieldValue.serverTimestamp(),
         });
       } catch (firestoreError) {
-        // Log de specifieke Firestore fout voor debugging
         print('Firestore error: $firestoreError');
-        
-        // We gaan hier geen exception throwen, omdat de authenticatie wel is gelukt
-        // We kunnen later opnieuw proberen het gebruikersprofiel aan te maken
       }
-      
       return result;
     } catch (authError) {
-      // Hier gooien we de fout voor authenticatie problemen
       rethrow;
     }
   }
@@ -56,11 +47,20 @@ class AuthService {
     }
   }
 
+  // Wachtwoord reset e-mail versturen
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      throw Exception('Fout bij het verzenden van de reset e-mail: ${e.toString()}');
+    }
+  }
+
   // Uitloggen
   Future<void> signOut() async {
     return await _auth.signOut();
   }
-  
+
   // Gebruikersprofiel ophalen
   Future<Map<String, dynamic>?> getUserProfile(String uid) async {
     try {
@@ -70,7 +70,7 @@ class AuthService {
       return null;
     }
   }
-  
+
   // Gebruikersprofiel aanmaken/updaten
   Future<bool> updateUserProfile(String uid, Map<String, dynamic> data) async {
     try {
