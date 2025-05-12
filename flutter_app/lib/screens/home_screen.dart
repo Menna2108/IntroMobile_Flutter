@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_app/screens/reservation/reservations_screen.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -11,7 +12,9 @@ import '../services/appliance_service.dart';
 import '../widgets/user_appliances_widget.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final String? initialCategory;
+
+  const HomeScreen({super.key, this.initialCategory});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -26,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   String _userName = 'Gebruiker';
   String _searchQuery = '';
-  String _activeCategory = 'Alle';
+  late String _activeCategory;
   LatLng? _userPosition;
   double _maxDistance = 10.0;
   String _sortOrder = 'asc';
@@ -45,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _activeCategory = widget.initialCategory ?? 'Alle';
     _loadUserData();
   }
 
@@ -52,12 +56,14 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final User? user = _authService.currentUser;
       if (user != null) {
-        final userData = await _firestore.collection('users').doc(user.uid).get();
+        final userData =
+            await _firestore.collection('users').doc(user.uid).get();
         if (userData.exists && userData.data() != null) {
           if (mounted) {
             setState(() {
               _userName = userData.data()!['name'] ?? 'Gebruiker';
-              if (userData.data()!['latitude'] != null && userData.data()!['longitude'] != null) {
+              if (userData.data()!['latitude'] != null &&
+                  userData.data()!['longitude'] != null) {
                 _userPosition = LatLng(
                   userData.data()!['latitude'] as double,
                   userData.data()!['longitude'] as double,
@@ -198,7 +204,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _showProfileDialog() async {
     final User? user = _authService.currentUser;
     String email = user?.email ?? 'Geen e-mail beschikbaar';
-    TextEditingController nameController = TextEditingController(text: _userName);
+    TextEditingController nameController = TextEditingController(
+      text: _userName,
+    );
     TextEditingController addressController = TextEditingController();
     String? errorMessage;
 
@@ -254,7 +262,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 4),
                           Text(
                             email,
-                            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
                           ),
                         ],
                       ),
@@ -284,10 +295,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ElevatedButton.icon(
                       onPressed: () async {
                         try {
-                          bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                          bool serviceEnabled =
+                              await Geolocator.isLocationServiceEnabled();
                           if (!serviceEnabled) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Locatieservices zijn uitgeschakeld.')),
+                              const SnackBar(
+                                content: Text(
+                                  'Locatieservices zijn uitgeschakeld.',
+                                ),
+                              ),
                             );
                             setState(() {
                               addressController.text = 'Antwerpen, België';
@@ -296,19 +312,23 @@ class _HomeScreenState extends State<HomeScreen> {
                             return;
                           }
 
-                          PermissionStatus permissionStatus = await Permission.location.request();
+                          PermissionStatus permissionStatus =
+                              await Permission.location.request();
                           if (permissionStatus.isGranted) {
-                            Position position = await Geolocator.getCurrentPosition(
-                              locationSettings: const LocationSettings(
-                                accuracy: LocationAccuracy.high,
-                              ),
-                            );
-                            List<Placemark> placemarks = await placemarkFromCoordinates(
-                              position.latitude,
-                              position.longitude,
-                            );
+                            Position position =
+                                await Geolocator.getCurrentPosition(
+                                  locationSettings: const LocationSettings(
+                                    accuracy: LocationAccuracy.high,
+                                  ),
+                                );
+                            List<Placemark> placemarks =
+                                await placemarkFromCoordinates(
+                                  position.latitude,
+                                  position.longitude,
+                                );
                             Placemark placemark = placemarks.first;
-                            String address = '${placemark.street}, ${placemark.locality}';
+                            String address =
+                                '${placemark.street}, ${placemark.locality}';
 
                             setState(() {
                               addressController.text = address;
@@ -316,7 +336,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             });
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Locatietoestemming geweigerd.')),
+                              const SnackBar(
+                                content: Text('Locatietoestemming geweigerd.'),
+                              ),
                             );
                             setState(() {
                               addressController.text = 'Antwerpen, België';
@@ -325,7 +347,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           }
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Fout bij ophalen locatie: $e')),
+                            SnackBar(
+                              content: Text('Fout bij ophalen locatie: $e'),
+                            ),
                           );
                           setState(() {
                             addressController.text = 'Antwerpen, België';
@@ -382,13 +406,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       String address = addressController.text.trim();
 
                       if (address.isNotEmpty) {
-                        List<Location> locations = await locationFromAddress(address);
+                        List<Location> locations = await locationFromAddress(
+                          address,
+                        );
                         if (locations.isNotEmpty) {
                           latitude = locations.first.latitude;
                           longitude = locations.first.longitude;
                         } else {
                           setState(() {
-                            errorMessage = 'Geen locatie gevonden voor dit adres';
+                            errorMessage =
+                                'Geen locatie gevonden voor dit adres';
                           });
                           return;
                         }
@@ -401,7 +428,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         'longitude': longitude,
                       }, SetOptions(merge: true));
 
-                      await _applianceService.updateUserAppliancesUserName(user.uid, nameController.text.trim());
+                      await _applianceService.updateUserAppliancesUserName(
+                        user.uid,
+                        nameController.text.trim(),
+                      );
 
                       setState(() {
                         _userName = nameController.text.trim();
@@ -480,11 +510,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildApplianceCard(Appliance appliance) {
+    String city = 'Onbekend';
+    if (appliance.address != null && appliance.address!.isNotEmpty) {
+      final addressParts = appliance.address!.split(',');
+      if (addressParts.length > 1) {
+        city = addressParts[1].trim();
+      } else {
+        city = appliance.address!.trim();
+      }
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       child: InkWell(
         onTap: () {
@@ -499,18 +537,21 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: appliance.imageUrl != null && appliance.imageUrl!.isNotEmpty
-                  ? Image.network(
-                      appliance.imageUrl!,
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return _buildPlaceholderImage(appliance.category);
-                      },
-                    )
-                  : _buildPlaceholderImage(appliance.category),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
+              child:
+                  appliance.imageUrl != null && appliance.imageUrl!.isNotEmpty
+                      ? Image.network(
+                        appliance.imageUrl!,
+                        height: 180,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildPlaceholderImage(appliance.category);
+                        },
+                      )
+                      : _buildPlaceholderImage(appliance.category),
             ),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -532,7 +573,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.blue[100],
                           borderRadius: BorderRadius.circular(8),
@@ -547,30 +591,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    appliance.description,
-                    style: TextStyle(
-                      color: Colors.grey[700],
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
                       Icon(
-                        Icons.category_outlined,
+                        Icons.location_on_outlined,
                         size: 16,
                         color: Colors.grey[600],
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        appliance.category,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                        ),
-                      ),
+                      Text(city, style: TextStyle(color: Colors.grey[600])),
                       const Spacer(),
                       Icon(
                         Icons.person_outline,
@@ -580,9 +610,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(width: 4),
                       Text(
                         appliance.userName,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -624,13 +652,7 @@ class _HomeScreenState extends State<HomeScreen> {
       height: 180,
       width: double.infinity,
       color: Colors.grey[200],
-      child: Center(
-        child: Icon(
-          icon,
-          size: 60,
-          color: Colors.grey[400],
-        ),
-      ),
+      child: Center(child: Icon(icon, size: 60, color: Colors.grey[400])),
     );
   }
 
@@ -674,22 +696,25 @@ class _HomeScreenState extends State<HomeScreen> {
                         decoration: InputDecoration(
                           hintText: 'Zoek naar apparaten...',
                           prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    setState(() {
-                                      _searchQuery = '';
-                                      _searchController.clear();
-                                    });
-                                  },
-                                )
-                              : null,
+                          suffixIcon:
+                              _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchQuery = '';
+                                        _searchController.clear();
+                                      });
+                                    },
+                                  )
+                                  : null,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
                         ),
                         onChanged: (value) {
                           setState(() {
@@ -743,12 +768,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: isActive ? Colors.blue[700] : Colors.grey[200],
+                                color:
+                                    isActive
+                                        ? Colors.blue[700]
+                                        : Colors.grey[200],
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 category['icon'],
-                                color: isActive ? Colors.white : Colors.grey[700],
+                                color:
+                                    isActive ? Colors.white : Colors.grey[700],
                                 size: 28,
                               ),
                             ),
@@ -756,8 +785,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             Text(
                               category['name'],
                               style: TextStyle(
-                                color: isActive ? Colors.blue[700] : Colors.grey[700],
-                                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                                color:
+                                    isActive
+                                        ? Colors.blue[700]
+                                        : Colors.grey[700],
+                                fontWeight:
+                                    isActive
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                               ),
                             ),
                           ],
@@ -771,17 +806,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: EdgeInsets.only(top: 16.0, bottom: 8.0),
                 child: Text(
                   'Apparaten',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               StreamBuilder<List<Appliance>>(
-                stream: _searchQuery.isNotEmpty
-                    ? _applianceService.searchAppliances(_searchQuery)
-                    : _activeCategory != 'Alle'
-                        ? _applianceService.getAppliancesByCategory(_activeCategory)
+                stream:
+                    _searchQuery.isNotEmpty
+                        ? _applianceService.searchAppliances(_searchQuery)
+                        : _activeCategory != 'Alle'
+                        ? _applianceService.getAppliancesByCategory(
+                          _activeCategory,
+                        )
                         : _applianceService.getAppliances(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -813,9 +848,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           Text(
                             'Er zijn geen apparaten in deze categorie',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                            ),
+                            style: TextStyle(color: Colors.grey[600]),
                           ),
                         ],
                       ),
@@ -823,24 +856,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
 
                   final user = _authService.currentUser;
-                  List<Appliance> filteredAppliances = snapshot.data!
-                      .where((appliance) => appliance.userId != user!.uid)
-                      .where((appliance) {
-                        if (_userPosition == null ||
-                            appliance.latitude == null ||
-                            appliance.longitude == null) {
-                          return true;
-                        }
-                        double distanceInMeters = Geolocator.distanceBetween(
-                          _userPosition!.latitude,
-                          _userPosition!.longitude,
-                          appliance.latitude!,
-                          appliance.longitude!,
-                        );
-                        double distanceInKm = distanceInMeters / 1000;
-                        return distanceInKm <= _maxDistance;
-                      })
-                      .toList();
+                  List<Appliance> filteredAppliances =
+                      snapshot.data!
+                          .where((appliance) => appliance.userId != user!.uid)
+                          .where((appliance) => appliance.isAvailable)
+                          .where((appliance) {
+                            if (_userPosition == null ||
+                                appliance.latitude == null ||
+                                appliance.longitude == null) {
+                              return true;
+                            }
+                            double distanceInMeters =
+                                Geolocator.distanceBetween(
+                                  _userPosition!.latitude,
+                                  _userPosition!.longitude,
+                                  appliance.latitude!,
+                                  appliance.longitude!,
+                                );
+                            double distanceInKm = distanceInMeters / 1000;
+                            return distanceInKm <= _maxDistance;
+                          })
+                          .toList();
 
                   filteredAppliances.sort((a, b) {
                     if (_sortOrder == 'asc') {
@@ -871,9 +907,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           Text(
                             'Er zijn geen apparaten in deze categorie',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                            ),
+                            style: TextStyle(color: Colors.grey[600]),
                           ),
                         ],
                       ),
@@ -915,7 +949,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      const Center(child: Text('Mijn Reserveringen')),
+      const ReservationsScreen(),
     ];
 
     return Scaffold(
@@ -968,7 +1002,10 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedItemColor: Colors.grey[600],
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.devices), label: 'Mijn Apparaten'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.devices),
+            label: 'Mijn Apparaten',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_circle_outline, size: 30),
             label: 'Toevoegen',

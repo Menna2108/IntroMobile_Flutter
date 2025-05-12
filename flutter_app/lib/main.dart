@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_app/models/appliance.dart';
 import 'package:flutter_app/screens/appliance/appliance_detail_screen.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
@@ -7,7 +8,9 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/appliance/add_appliance_screen.dart';
+import 'screens/appliance/edit_appliance_screen.dart'; 
 import 'screens/map_screen.dart';
+import 'screens/reservation/reservations_screen.dart';
 import 'services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -47,8 +50,14 @@ class MyApp extends StatelessWidget {
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const HomeScreen(),
           '/add_appliance': (context) => const AddApplianceScreen(),
+          '/edit_appliance':
+              (context) => EditApplianceScreen(
+                appliance:
+                    ModalRoute.of(context)!.settings.arguments as Appliance,
+              ),
           '/map': (context) => const MapScreen(),
           '/appliance_detail': (context) => const ApplianceDetailScreen(),
+          '/reservations': (context) => const ReservationsScreen(),
         },
       ),
     );
