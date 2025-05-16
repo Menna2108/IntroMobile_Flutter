@@ -25,9 +25,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mijn Reserveringen'),
-      ),
+      appBar: AppBar(title: const Text('Mijn Reserveringen')),
       body: Column(
         children: [
           Padding(
@@ -45,7 +43,8 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                   },
                   selectedColor: Colors.blue[700],
                   labelStyle: TextStyle(
-                    color: _showRenterReservations ? Colors.white : Colors.black,
+                    color:
+                        _showRenterReservations ? Colors.white : Colors.black,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -59,7 +58,8 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                   },
                   selectedColor: Colors.blue[700],
                   labelStyle: TextStyle(
-                    color: !_showRenterReservations ? Colors.white : Colors.black,
+                    color:
+                        !_showRenterReservations ? Colors.white : Colors.black,
                   ),
                 ),
               ],
@@ -67,9 +67,10 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<Reservation>>(
-              stream: _showRenterReservations
-                  ? _reservationService.getRenterReservations(user.uid)
-                  : _reservationService.getOwnerReservations(user.uid),
+              stream:
+                  _showRenterReservations
+                      ? _reservationService.getRenterReservations(user.uid)
+                      : _reservationService.getOwnerReservations(user.uid),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -138,10 +139,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
           children: [
             Text(
               reservation.applianceTitle,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Row(
@@ -201,12 +199,14 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                           'confirmed',
                         );
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Reservering bevestigd')),
+                          const SnackBar(
+                            content: Text('Reservering bevestigd'),
+                          ),
                         );
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Fout: $e')),
-                        );
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text('Fout: $e')));
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -232,12 +232,14 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                             .doc(reservation.applianceId)
                             .update({'isAvailable': true});
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Reservering geannuleerd')),
+                          const SnackBar(
+                            content: Text('Reservering geannuleerd'),
+                          ),
                         );
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Fout: $e')),
-                        );
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text('Fout: $e')));
                       }
                     },
                     style: ElevatedButton.styleFrom(
